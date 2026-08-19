@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gourouss</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+/* ============================================================
+   GOUROUSS — Design System
+   Concept : le coffre-fort numérique. Un sceau circulaire marque
+   chaque transaction "sous garde" jusqu'à ce que les deux parties
+   confirment — d'où le motif de sceau utilisé pour les statuts.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --forest: #0B3D2E;
+  --forest-light: #14563F;
+  --gold: #C9A227;
+  --gold-soft: #E8D48A;
+  --cream: #F7F4EE;
+  --ink: #17211D;
+  --sage: #8FA396;
+  --sage-line: #D9DFD9;
+  --rust: #B5482D;
+  --white: #FFFFFF;
+
+  --font-display: 'Fraunces', serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+.grs-app {
+  min-height: 100vh;
+}
+
+/* ---------- Layout shell ---------- */
+.grs-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.grs-sidebar {
+  width: 240px;
+  background: var(--forest);
+  color: var(--cream);
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.grs-brand {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 44px;
+}
+
+.grs-brand .seal-mini {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6rem;
+  color: var(--gold);
+}
+
+.grs-nav a {
+  display: block;
+  color: rgba(247,244,238,0.72);
+  text-decoration: none;
+  font-size: 0.92rem;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(247,244,238,0.08);
+}
+
+.grs-nav a.active { color: var(--gold-soft); }
+
+.grs-main {
+  flex: 1;
+  padding: 40px 48px;
+  max-width: 980px;
+}
+
+@media (max-width: 760px) {
+  .grs-shell { flex-direction: column; }
+  .grs-sidebar { width: 100%; flex-direction: row; align-items: center; padding: 16px 20px; }
+  .grs-brand { margin-bottom: 0; }
+  .grs-nav { display: none; }
+  .grs-main { padding: 24px 20px; }
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; margin: 0; }
+.grs-mono { font-family: var(--font-mono); }
+
+/* ---------- Auth page ---------- */
+.grs-auth {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.grs-auth-card {
+  background: var(--white);
+  border-radius: 4px;
+  padding: 44px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 24px 60px -28px rgba(11,61,46,0.28);
+  border-top: 3px solid var(--gold);
+}
+
+.grs-auth-brand {
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  color: var(--forest);
+  margin-bottom: 6px;
+}
+
+.grs-auth-tag {
+  font-size: 0.85rem;
+  color: var(--sage);
+  margin-bottom: 30px;
+}
+
+.grs-field { margin-bottom: 18px; }
+.grs-field label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink);
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+.grs-field input, .grs-field select, .grs-field textarea {
+  width: 100%;
+  padding: 11px 13px;
+  border: 1.5px solid var(--sage-line);
+  border-radius: 3px;
+  font-family: var(--font-body);
+  font-size: 0.94rem;
+  background: var(--cream);
+  color: var(--ink);
+}
+.grs-field input:focus, .grs-field select:focus, .grs-field textarea:focus {
+  outline: 2px solid var(--forest);
+  outline-offset: 1px;
+  background: var(--white);
+}
+
+.grs-role-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.grs-role-toggle button {
+  flex: 1;
+  padding: 10px;
+  border: 1.5px solid var(--sage-line);
+  background: var(--cream);
+  border-radius: 3px;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--ink);
+}
+.grs-role-toggle button.active {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: var(--white);
+}
+
+.grs-btn {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 3px;
+  background: var(--forest);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.94rem;
+  cursor: pointer;
+  transition: background .15s;
+}
+.grs-btn:hover { background: var(--forest-light); }
+.grs-btn:disabled { opacity: 0.5; cursor: default; }
+
+.grs-btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--forest);
+  color: var(--forest);
+}
+.grs-btn-outline:hover { background: rgba(11,61,46,0.06); }
+
+.grs-switch {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 0.85rem;
+  color: var(--sage);
+}
+.grs-switch button {
+  background: none; border: none; color: var(--forest);
+  font-weight: 600; cursor: pointer; text-decoration: underline;
+}
+
+.grs-error {
+  background: rgba(181,72,45,0.08);
+  border: 1px solid rgba(181,72,45,0.3);
+  color: var(--rust);
+  font-size: 0.82rem;
+  padding: 10px 12px;
+  border-radius: 3px;
+  margin-bottom: 16px;
+}
+
+/* ---------- Dashboard header ---------- */
+.grs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.grs-header .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sage);
+  margin-bottom: 6px;
+  display: block;
+}
+.grs-header h1 { font-size: 1.9rem; color: var(--forest); }
+
+/* ---------- Summary strip ---------- */
+.grs-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--sage-line);
+  border: 1px solid var(--sage-line);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+.grs-summary-cell {
+  background: var(--white);
+  padding: 18px 22px;
+}
+.grs-summary-cell .val {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--forest);
+}
+.grs-summary-cell .lbl {
+  font-size: 0.78rem;
+  color: var(--sage);
+  margin-top: 4px;
+}
+
+/* ---------- Escrow list ---------- */
+.grs-list { display: flex; flex-direction: column; gap: 10px; }
+
+.grs-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  background: var(--white);
+  border: 1px solid var(--sage-line);
+  border-radius: 4px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.grs-row:hover { border-color: var(--gold); }
+
+.grs-row .info { flex: 1; min-width: 0; }
+.grs-row .title { font-weight: 600; font-size: 0.96rem; margin-bottom: 3px; }
+.grs-row .sub { font-size: 0.8rem; color: var(--sage); }
+.grs-row .amount { font-family: var(--font-mono); font-weight: 600; color: var(--forest); font-size: 1.02rem; }
+
+/* ---------- Seal (signature element: status badge) ---------- */
+.grs-seal {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.03em;
+  text-align: center;
+  line-height: 1.1;
+  position: relative;
+}
+.grs-seal::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px dashed currentColor;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+.grs-seal.pending { color: var(--sage); }
+.grs-seal.funded { color: var(--gold); }
+.grs-seal.delivered { color: var(--forest-light); }
+.grs-seal.completed { color: var(--forest); background: rgba(11,61,46,0.06); }
+.grs-seal.disputed { color: var(--rust); }
+.grs-seal.cancelled, .grs-seal.refunded { color: var(--sage); }
+
+.grs-status-label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 9px;
+  border-radius: 100px;
+  display: inline-block;
+}
+.grs-status-label.pending { background: rgba(143,163,150,0.15); color: var(--sage); }
+.grs-status-label.funded { background: rgba(201,162,39,0.15); color: #93791D; }
+.grs-status-label.delivered { background: rgba(20,86,63,0.12); color: var(--forest-light); }
+.grs-status-label.completed { background: rgba(11,61,46,0.12); color: var(--forest); }
+.grs-status-label.disputed { background: rgba(181,72,45,0.12); color: var(--rust); }
+.grs-status-label.cancelled, .grs-status-label.refunded { background: rgba(143,163,150,0.15); color: var(--sage); }
+
+/* ---------- Custody bar (progress through escrow stages) ---------- */
+.grs-custody {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 28px 0;
+}
+.grs-custody-step {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+.grs-custody-step .dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--sage-line);
+  margin: 0 auto 8px;
+  border: 2px solid var(--white);
+  box-shadow: 0 0 0 1px var(--sage-line);
+}
+.grs-custody-step.done .dot { background: var(--forest); box-shadow: 0 0 0 1px var(--forest); }
+.grs-custody-step.current .dot { background: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+.grs-custody-step .lbl { font-size: 0.72rem; color: var(--sage); }
+.grs-custody-step.done .lbl, .grs-custody-step.current .lbl { color: var(--ink); font-weight: 500; }
+.grs-custody-line {
+  position: absolute; top: 5px; left: 50%; width: 100%; height: 2px;
+  background: var(--sage-line); z-index: -1;
+}
+.grs-custody-step.done .grs-custody-line { background: var(--forest); }
+
+/* ---------- Detail card ---------- */
+.grs-detail-card {
+  background: var(--white);
+  border: 1px solid var(--sage-line);
+  border-radius: 4px;
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.grs-detail-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.grs-back {
+  background: none; border: none; color: var(--sage);
+  font-family: var(--font-body); font-size: 0.85rem;
+  cursor: pointer; margin-bottom: 20px; padding: 0;
+}
+.grs-back:hover { color: var(--forest); }
+
+.grs-kv { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--sage-line); font-size: 0.88rem; }
+.grs-kv:last-child { border-bottom: none; }
+.grs-kv .k { color: var(--sage); }
+.grs-kv .v { font-family: var(--font-mono); font-weight: 500; }
+
+.grs-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--sage);
+}
+.grs-empty h3 { color: var(--ink); margin-bottom: 8px; font-size: 1.1rem; }
+
+.grs-proof-img {
+  max-width: 100%;
+  border-radius: 4px;
+  border: 1px solid var(--sage-line);
+  margin: 14px 0;
+}
+
+.grs-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.grs-actions .grs-btn, .grs-actions .grs-btn-outline { width: auto; padding: 11px 20px; }
+
+/* ---------- Sélecteur réseau mobile money (dépôt) ---------- */
+.grs-network-toggle {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+.grs-network-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border: 1.5px solid var(--sage-line);
+  background: var(--cream);
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  color: var(--ink);
+  transition: border-color .15s, background .15s;
+}
+.grs-network-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--sage-line);
+  flex-shrink: 0;
+}
+.grs-network-btn.airtel_money.active {
+  border-color: #E4002B;
+  background: rgba(228,0,43,0.08);
+  color: #E4002B;
+}
+.grs-network-btn.airtel_money.active .grs-network-dot { background: #E4002B; }
+.grs-network-btn.moov_money.active {
+  border-color: #1B75BB;
+  background: rgba(27,117,187,0.08);
+  color: #1B75BB;
+}
+.grs-network-btn.moov_money.active .grs-network-dot { background: #1B75BB; }
+.grs-network-number {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: rgba(201,162,39,0.1);
+  border: 1px solid rgba(201,162,39,0.35);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+.grs-network-number-value {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--forest);
+  margin-top: 4px;
+}
+
+/* ---------- Mode sombre ---------- */
+body.grs-dark {
+  --forest: #1B5E45;
+  --forest-light: #24785A;
+  --gold: #D4B34A;
+  --gold-soft: #E8D48A;
+  --cream: #14201B;
+  --ink: #EDEAE3;
+  --sage: #7D9186;
+  --sage-line: #2C3B33;
+  --rust: #E07856;
+  --white: #1C2A23;
+}
+body.grs-dark .grs-auth-card,
+body.grs-dark .grs-detail-card,
+body.grs-dark .grs-summary-cell,
+body.grs-dark .grs-row {
+  background: var(--white);
+}
+body.grs-dark .grs-field input,
+body.grs-dark .grs-field select,
+body.grs-dark .grs-field textarea {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+.grs-theme-toggle {
+  background: none;
+  border: 1px solid rgba(247,244,238,0.25);
+  color: var(--cream);
+  border-radius: 100px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  margin-top: 16px;
+}
+
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext, Component } = React;
+
+const supabase = window.supabase.createClient(
+  'https://cmolqdiguxpqrrhbgfxe.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtb2xxZGlndXhwcXJyaGJnZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0Mzg1OTAsImV4cCI6MjEwMTAxNDU5MH0.aXR_D57vZnEcI25fZ3Vha81H_t8P57tIPP5-dsYEEpg'
+);
+
+// ==== src/context/AuthContext.jsx ====
+
+
+const AuthContext = createContext(null);
+
+// Une seule source de vérité pour la session, partagée par toute l'app.
+// Avant ce correctif, chaque page relançait sa propre vérification de session,
+// ce qui créait une fenêtre où `user` valait encore `null` pendant que la page
+// essayait déjà de lire `user.id` → crash "Cannot read properties of null".
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadProfile = useCallback(async (userId) => {
+    if (!userId) {
+      setProfile(null);
+      return;
+    }
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    if (error) {
+      console.error('Erreur chargement profil:', error.message);
+      return;
+    }
+    setProfile(data);
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) loadProfile(session.user.id);
+      setLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        loadProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [loadProfile]);
+
+  const signUp = async ({ email, password, fullName, role }) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName, role } },
+    });
+    return { data, error };
+  };
+
+  const signIn = async ({ email, password }) => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    return { data, error };
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const resetPassword = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    return { error };
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut, resetPassword }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth doit être utilisé à l\'intérieur de <AuthProvider>');
+  return ctx;
+}
+
+
+// ==== src/hooks/useEscrows.js ====
+
+
+// Transitions de statut autorisées (doit correspondre à la logique mêmier)
+const VALID_TRANSITIONS = {
+  pending: ['funded', 'cancelled'],
+  funded: ['delivered', 'disputed'],
+  delivered: ['completed', 'disputed'],
+  disputed: ['resolved_buyer', 'resolved_seller'],
+};
+
+function useEscrows(userId) {
+  const [escrows, setEscrows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchEscrows = useCallback(async () => {
+    if (!userId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('escrows')
+      .select(`
+        *,
+        buyer:buyer_id ( id, full_name, avatar_url ),
+        seller:seller_id ( id, full_name, avatar_url )
+      `)
+      .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erreur chargement transactions:', error.message);
+      setEscrows([]);
+    } else {
+      setEscrows(data || []);
+    }
+    setLoading(false);
+  }, [userId]);
+
+  useEffect(() => {
+    fetchEscrows();
+
+    // Mises à jour en temps réel : la liste se rafraîchit automatiquement
+    const channel = supabase
+      .channel('escrows-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'escrows' },
+        () => fetchEscrows()
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [fetchEscrows]);
+
+  const createEscrow = async ({
+    sellerId, title, description, amount, currency = 'XAF',
+    category = null, deliveryMethod = null, deliveryTerms = null, deadline = null,
+  }) => {
+    const { data, error } = await supabase
+      .from('escrows')
+      .insert({
+        buyer_id: userId, seller_id: sellerId, title, description, amount, currency,
+        category, delivery_method: deliveryMethod, delivery_terms: deliveryTerms, deadline,
+      })
+      .select()
+      .single();
+    return { data, error };
+  };
+
+  const updateStatus = async (escrowId, currentStatus, newStatus, note = '') => {
+    const allowed = VALID_TRANSITIONS[currentStatus] || [];
+    if (!allowed.includes(newStatus)) {
+      return { error: { message: `Transition ${currentStatus} → ${newStatus} non autorisé` } };
+    }
+
+    const timestampField =
+      newStatus === 'funded' ? 'funded_at' :
+      newStatus === 'delivered' ? 'delivered_at' :
+      newStatus === 'completed' ? 'completed_at' : null;
+
+    const updates = { status: newStatus };
+    if (timestampField) updates[timestampField] = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('escrows')
+      .update(updates)
+      .eq('id', escrowId)
+      .select()
+      .single();
+
+    if (!error) {
+      // Journalise le changement dans escrow_events
+      await supabase.from('escrow_events').insert({
+        escrow_id: escrowId,
+        actor_id: userId,
+        from_status: currentStatus,
+        to_status: newStatus,
+        note,
+      });
+    }
+
+    return { data, error };
+  };
+
+  // Upload la capture d'écran + confirmation du montant réellement envoyé (mode manuel)
+  const submitPaymentProof = async (escrowId, file, amountSent, paymentNetwork) => {
+    const filePath = `${escrowId}/${Date.now()}_${file.name}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('payment-proofs')
+      .upload(filePath, file);
+
+    if (uploadError) return { error: uploadError };
+
+    // Le bucket est privé : on stocke le chemin, pas une URL publique
+    const { data, error } = await supabase.rpc('submit_payment_proof', {
+      p_escrow_id: escrowId,
+      p_proof_url: filePath,
+      p_amount_sent: amountSent,
+      p_payment_network: paymentNetwork,
+    });
+
+    return { data, error };
+  };
+
+  // Génère une URL temporaire pour afficher/vérifier une preuve (valable 60 min)
+  const getProofUrl = async (filePath) => {
+    const { data, error } = await supabase.storage
+      .from('payment-proofs')
+      .createSignedUrl(filePath, 3600);
+    return { url: data?.signedUrl, error };
+  };
+
+  // Le vendeur (ou un admin) valide ou refuse la preuve reçue
+  // acceptMismatch : à passer à true si le vendeur valide malgré un écart de montant détecté
+  const verifyPaymentProof = async (escrowId, approved, rejectionReason = null, acceptMismatch = false) => {
+    const { data, error } = await supabase.rpc('verify_payment_proof', {
+      p_escrow_id: escrowId,
+      p_approved: approved,
+      p_rejection_reason: rejectionReason,
+      p_accept_mismatch: acceptMismatch,
+    });
+    return { data, error };
+  };
+
+  return {
+    escrows,
+    loading,
+    createEscrow,
+    updateStatus,
+    submitPaymentProof,
+    getProofUrl,
+    verifyPaymentProof,
+    refetch: fetchEscrows,
+  };
+}
+
+
+// ==== src/hooks/useMessages.js ====
+
+
+function useMessages(escrowId, userId) {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMessages = useCallback(async () => {
+    if (!escrowId) return;
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*, sender:sender_id(full_name)')
+      .eq('escrow_id', escrowId)
+      .order('created_at', { ascending: true });
+    if (!error) setMessages(data || []);
+    setLoading(false);
+  }, [escrowId]);
+
+  useEffect(() => {
+    fetchMessages();
+    const channel = supabase
+      .channel(`messages-${escrowId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `escrow_id=eq.${escrowId}` }, fetchMessages)
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [fetchMessages, escrowId]);
+
+  const sendMessage = async (content) => {
+    if (!content.trim()) return { error: null };
+    const { error } = await supabase.from('messages').insert({
+      escrow_id: escrowId,
+      sender_id: userId,
+      content: content.trim(),
+    });
+    return { error };
+  };
+
+  return { messages, loading, sendMessage };
+}
+
+
+// ==== src/components/StatusUI.jsx ====
+const LABELS = {
+  pending: 'En attente',
+  funded: 'Financée',
+  delivered: 'Livrée',
+  completed: 'Terminée',
+  disputed: 'Litige',
+  refunded: 'Remboursée',
+  cancelled: 'Annulée',
+};
+
+const SEAL_TEXT = {
+  pending: 'ATT.',
+  funded: 'GARDE',
+  delivered: 'LIVRÉ',
+  completed: 'SCELLÉ',
+  disputed: 'LITIGE',
+  refunded: 'REMB.',
+  cancelled: 'ANNUL.',
+};
+
+function StatusLabel({ status }) {
+  return <span className={`grs-status-label ${status}`}>{LABELS[status] || status}</span>;
+}
+
+function StatusSeal({ status }) {
+  return <div className={`grs-seal ${status}`}>{SEAL_TEXT[status] || status}</div>;
+}
+
+// Barre de garde : visualise où en est l'argent dans le cycle de custody
+const STAGES = [
+  { key: 'pending', label: 'Créée' },
+  { key: 'funded', label: 'Fonds reçus' },
+  { key: 'delivered', label: 'Livraison' },
+  { key: 'completed', label: 'Libérée' },
+];
+
+function CustodyBar({ status }) {
+  if (status === 'disputed' || status === 'cancelled' || status === 'refunded') {
+    return <StatusLabel status={status} />;
+  }
+  const currentIndex = STAGES.findIndex((s) => s.key === status);
+
+  return (
+    <div className="grs-custody">
+      {STAGES.map((stage, i) => {
+        const state = i < currentIndex ? 'done' : i === currentIndex ? 'current' : '';
+        return (
+          <div key={stage.key} className={`grs-custody-step ${state}`}>
+            {i > 0 && <div className="grs-custody-line" />}
+            <div className="dot" />
+            <div className="lbl">{stage.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+// ==== src/components/PaymentProof.jsx ====
+
+const PAYMENT_NETWORKS = [
+  { key: 'airtel_money', label: 'Airtel Money', number: '86354810' },
+  { key: 'moov_money', label: 'Moov Money', number: '97999218' },
+];
+
+/**
+ * Formulaire côté ACHETEUR : d'abord choisir le réseau mobile money utilisé,
+ * puis uploader la capture d'écran après avoir envoyé l'argent manuellement
+ * au vendeur via Airtel Money ou Moov Money.
+ */
+function ProofUploadForm({ escrow, userId }) {
+  const { submitPaymentProof } = useEscrows(userId);
+  const [network, setNetwork] = useState(null);
+  const [file, setFile] = useState(null);
+  const [amountSent, setAmountSent] = useState(escrow.amount);
+  const [status, setStatus] = useState('idle'); // idle | uploading | done | error
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const differs = Number(amountSent) !== Number(escrow.amount);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!network) {
+      setErrorMsg('Sélectionnez le réseau utilisé pour l\'envoi (Airtel Money ou Moov Money).');
+      return;
+    }
+    if (!file) return;
+    setStatus('uploading');
+    setErrorMsg('');
+
+    const { error } = await submitPaymentProof(escrow.id, file, Number(amountSent), network);
+
+    if (error) {
+      setStatus('error');
+      setErrorMsg(error.message);
+    } else {
+      setStatus('done');
+    }
+  };
+
+  if (status === 'done') {
+    const networkLabel = PAYMENT_NETWORKS.find((n) => n.key === network)?.label;
+    return (
+      <p>
+        Preuve envoyée via {networkLabel}{differs ? ' — écart de montant signalé au vendeur' : ''}. En attente de validation.
+      </p>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="grs-field">
+        <label>Sur quel réseau avez-vous envoyé le paiement ?</label>
+        <div className="grs-network-toggle">
+          {PAYMENT_NETWORKS.map((n) => (
+            <button
+              type="button"
+              key={n.key}
+              className={`grs-network-btn ${n.key} ${network === n.key ? 'active' : ''}`}
+              onClick={() => setNetwork(n.key)}
+            >
+              <span className="grs-network-dot" />
+              {n.label}
+            </button>
+          ))}
+        </div>
+        {!network && (
+          <p style={{ fontSize: '0.78rem', color: 'var(--sage)', marginTop: 6 }}>
+            Choisissez le réseau utilisé pour envoyer l'argent au vendeur avant de continuer.
+          </p>
+        )}
+        {network && (
+          <div className="grs-network-number">
+            Envoyez {escrow.amount} {escrow.currency} au numéro {PAYMENT_NETWORKS.find((n) => n.key === network)?.label} :
+            <span className="grs-mono grs-network-number-value">
+              {PAYMENT_NETWORKS.find((n) => n.key === network)?.number}
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="grs-field">
+        <label>Montant attendu</label>
+        <input value={`${escrow.amount} ${escrow.currency}`} disabled />
+      </div>
+
+      <div className="grs-field">
+        <label>Montant que vous avez réellement envoyé</label>
+        <input
+          type="number"
+          step="0.01"
+          value={amountSent}
+          onChange={(e) => setAmountSent(e.target.value)}
+          required
+        />
+      </div>
+
+      {differs && (
+        <div className="grs-error">
+          Le montant déclaré ({amountSent} {escrow.currency}) diffère du montant attendu
+          ({escrow.amount} {escrow.currency}). Le vendeur en sera informé et devra confirmer explicitement
+          avant de pouvoir accepter.
+        </div>
+      )}
+
+      <div className="grs-field">
+        <label>Capture d'écran du paiement {network ? `(${PAYMENT_NETWORKS.find((n) => n.key === network)?.label})` : ''}</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setFile(e.target.files[0])}
+          disabled={!network}
+          required
+        />
+      </div>
+
+      <button type="submit" className="grs-btn" disabled={status === 'uploading' || !network}>
+        {status === 'uploading' ? 'Envoi en cours...' : 'Envoyer la preuve'}
+      </button>
+      {errorMsg && <div className="grs-error">{errorMsg}</div>}
+    </form>
+  );
+}
+
+/**
+ * Panneau côté VENDEUR (ou admin) : voir le réseau utilisé, la preuve, et valider/refuser.
+ */
+function ProofReviewPanel({ escrow, userId }) {
+  const { getProofUrl, verifyPaymentProof } = useEscrows(userId);
+  const [proofUrl, setProofUrl] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [error, setError] = useState('');
+
+  const loadProof = async () => {
+    const { url } = await getProofUrl(escrow.payment_proof_url);
+    setProofUrl(url);
+  };
+
+  const handleApprove = async (acceptMismatch = false) => {
+    setError('');
+    const { error } = await verifyPaymentProof(escrow.id, true, null, acceptMismatch);
+    if (error) setError(error.message);
+  };
+
+  const handleReject = async () => {
+    if (!rejectionReason.trim()) return;
+    await verifyPaymentProof(escrow.id, false, rejectionReason);
+  };
+
+  if (!escrow.payment_proof_url) {
+    return <p>Aucune preuve soumise pour l'instant.</p>;
+  }
+
+  const networkLabel = PAYMENT_NETWORKS.find((n) => n.key === escrow.payment_network)?.label || escrow.payment_network;
+
+  return (
+    <div>
+      <div className="grs-kv">
+        <span className="k">Réseau utilisé</span>
+        <span className="v">{networkLabel}</span>
+      </div>
+      <div className="grs-kv">
+        <span className="k">Montant attendu</span>
+        <span className="v">{escrow.amount} {escrow.currency}</span>
+      </div>
+      <div className="grs-kv">
+        <span className="k">Montant déclaré par l'acheteur</span>
+        <span className="v">{escrow.buyer_confirmed_amount} {escrow.currency}</span>
+      </div>
+
+      {escrow.amount_mismatch && (
+        <div className="grs-error" style={{ marginTop: 14 }}>
+          ⚠ Écart détecté : l'acheteur déclare avoir envoyé {escrow.buyer_confirmed_amount} {escrow.currency}
+          au lieu des {escrow.amount} {escrow.currency} attendus. Vérifiez la capture d'écran avant de décider.
+        </div>
+      )}
+
+      <button className="grs-btn-outline" style={{ marginTop: 14 }} onClick={loadProof}>
+        Voir la preuve de paiement
+      </button>
+      {proofUrl && (
+        <img src={proofUrl} alt="Preuve de paiement" className="grs-proof-img" />
+      )}
+
+      {error && <div className="grs-error">{error}</div>}
+
+      <div className="grs-actions">
+        {escrow.amount_mismatch ? (
+          <button className="grs-btn" onClick={() => handleApprove(true)}>
+            ✓ Accepter quand même ce montant
+          </button>
+        ) : (
+          <button className="grs-btn" onClick={() => handleApprove(false)}>
+            ✓ Valider le paiement
+          </button>
+        )}
+      </div>
+      <div className="grs-actions">
+        <input
+          type="text"
+          placeholder="Motif du refus"
+          value={rejectionReason}
+          onChange={(e) => setRejectionReason(e.target.value)}
+          style={{ flex: 1, padding: '10px 12px', border: '1.5px solid var(--sage-line)', borderRadius: 3 }}
+        />
+        <button className="grs-btn-outline" onClick={handleReject}>✗ Refuser</button>
+      </div>
+    </div>
+  );
+}
+
+
+// ==== src/components/NewEscrowModal.jsx ====
+
+const CATEGORIES = ['Électronique', 'Vêtements & mode', 'Véhicules', 'Immobilier', 'Services', 'Autre'];
+const DELIVERY_METHODS = ['Remise en main propre', 'Livraison à domicile', 'Point de retrait'];
+
+function NewEscrowModal({ onCreate, onClose }) {
+  const [form, setForm] = useState({
+    sellerEmail: '', title: '', description: '', amount: '',
+    category: CATEGORIES[0], deliveryMethod: DELIVERY_METHODS[0], deliveryTerms: '', deadline: '',
+  });
+  const [seller, setSeller] = useState(null);
+  const [searching, setSearching] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const update = (field) => (e) => {
+    setForm((f) => ({ ...f, [field]: e.target.value }));
+    if (field === 'sellerEmail') setSeller(null);
+  };
+
+  const findSeller = async () => {
+    if (!form.sellerEmail.trim()) return;
+    setSearching(true);
+    setError('');
+    const { data, error } = await supabase.rpc('find_user_by_email', { p_email: form.sellerEmail.trim() });
+    setSearching(false);
+    const found = data?.[0];
+    if (error || !found) {
+      setError("Aucun compte vendeur trouvé avec cet email. Vérifie qu'il s'est bien inscrit.");
+      setSeller(null);
+    } else if (found.role !== 'seller') {
+      setError(`${found.full_name} est inscrit comme acheteur, pas vendeur.`);
+      setSeller(null);
+    } else {
+      setSeller(found);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!seller) {
+      setError("Cherche d'abord le vendeur par email avant de créer la transaction.");
+      return;
+    }
+    setLoading(true);
+    setError('');
+
+    const { error } = await onCreate({
+      sellerId: seller.id,
+      title: form.title,
+      description: form.description,
+      amount: parseFloat(form.amount),
+      category: form.category,
+      deliveryMethod: form.deliveryMethod,
+      deliveryTerms: form.deliveryTerms,
+      deadline: form.deadline || null,
+    });
+
+    if (error) setError(error.message);
+    else onClose();
+    setLoading(false);
+  };
+
+  return (
+    <div className="grs-detail-card">
+      <h2 style={{ marginBottom: 18, fontSize: '1.2rem' }}>Nouvelle transaction</h2>
+      {error && <div className="grs-error">{error}</div>}
+      <form onSubmit={handleSubmit}>
+        <div className="grs-field">
+          <label>Objet de la transaction</label>
+          <input value={form.title} onChange={update('title')} placeholder="Ex. iPhone 13 - 128Go" required />
+        </div>
+        <div className="grs-field">
+          <label>Description</label>
+          <textarea value={form.description} onChange={update('description')} rows={3} />
+        </div>
+
+        <div className="grs-field">
+          <label>Catégorie</label>
+          <select value={form.category} onChange={update('category')}>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
+        <div className="grs-field">
+          <label>Mode de livraison</label>
+          <select value={form.deliveryMethod} onChange={update('deliveryMethod')}>
+            {DELIVERY_METHODS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+
+        <div className="grs-field">
+          <label>Conditions de livraison (optionnel)</label>
+          <input value={form.deliveryTerms} onChange={update('deliveryTerms')} placeholder="Ex. à récupérer au marché central avant vendredi" />
+        </div>
+
+        <div className="grs-field">
+          <label>Date limite (optionnel)</label>
+          <input type="date" value={form.deadline} onChange={update('deadline')} />
+        </div>
+
+        <div className="grs-field">
+          <label>Email du vendeur</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input type="email" value={form.sellerEmail} onChange={update('sellerEmail')} placeholder="vendeur@email.com" style={{ flex: 1 }} required />
+            <button type="button" className="grs-btn-outline" style={{ width: 'auto', padding: '0 16px' }} onClick={findSeller} disabled={searching}>
+              {searching ? '...' : 'Chercher'}
+            </button>
+          </div>
+          {seller && (
+            <p style={{ fontSize: '0.82rem', color: 'var(--forest)', marginTop: 8 }}>✓ Vendeur trouvé : {seller.full_name}</p>
+          )}
+        </div>
+
+        <div className="grs-field">
+          <label>Montant (FCFA)</label>
+          <input type="number" min="1" value={form.amount} onChange={update('amount')} required />
+        </div>
+        <div className="grs-actions">
+          <button type="submit" className="grs-btn" disabled={loading || !seller} style={{ flex: 1 }}>
+            {loading ? 'Création...' : 'Créer la transaction'}
+          </button>
+          <button type="button" className="grs-btn-outline" onClick={onClose}>Annuler</button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+
+// ==== src/components/ChatPanel.jsx ====
+
+function ChatPanel({ escrowId, userId }) {
+  const { messages, sendMessage } = useMessages(escrowId, userId);
+  const [text, setText] = useState('');
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setSending(true);
+    await sendMessage(text);
+    setText('');
+    setSending(false);
+  };
+
+  return (
+    <div className="grs-detail-card">
+      <h3 style={{ fontSize: '1rem', marginBottom: 14 }}>💬 Messages</h3>
+      <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
+        {messages.length === 0 && (
+          <p style={{ color: 'var(--sage)', fontSize: '0.85rem' }}>Aucun message pour l'instant.</p>
+        )}
+        {messages.map((m) => {
+          const mine = m.sender_id === userId;
+          return (
+            <div key={m.id} style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
+              <div
+                style={{
+                  background: mine ? 'var(--forest)' : 'var(--cream)',
+                  color: mine ? 'var(--white)' : 'var(--ink)',
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  fontSize: '0.88rem',
+                }}
+              >
+                {m.content}
+              </div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--sage)', marginTop: 2, textAlign: mine ? 'right' : 'left' }}>
+                {m.sender?.full_name} · {new Date(m.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+      <form onSubmit={handleSend} style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Écrire un message..."
+          style={{ flex: 1, padding: '10px 12px', border: '1.5px solid var(--sage-line)', borderRadius: 3, background: 'var(--cream)' }}
+        />
+        <button type="submit" className="grs-btn" style={{ width: 'auto', padding: '0 18px' }} disabled={sending}>
+          Envoyer
+        </button>
+      </form>
+    </div>
+  );
+}
+
+
+// ==== src/components/ErrorBoundary.jsx ====
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error('Erreur capturée:', error, info);
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 24, fontFamily: 'monospace', background: '#fff', color: '#B5482D' }}>
+          <h2 style={{ fontFamily: 'sans-serif', color: '#17211D' }}>Une erreur est survenue</h2>
+          <p style={{ fontFamily: 'sans-serif', color: '#17211D', marginBottom: 12 }}>
+            Voici le détail technique — envoie une capture de ce texte :
+          </p>
+          <pre style={{ whiteSpace: 'pre-wrap', fontSize: 13, background: '#F7F4EE', padding: 12, borderRadius: 4 }}>
+            {this.state.error.message}
+            {'\n\n'}
+            {this.state.error.stack}
+          </pre>
+          <button
+            style={{ marginTop: 16, padding: '10px 20px', background: '#0B3D2E', color: 'white', border: 'none', borderRadius: 4 }}
+            onClick={() => this.setState({ error: null })}
+          >
+            Réessayer
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+
+// ==== src/pages/AuthPage.jsx ====
+
+function translateError(message) {
+  const map = {
+    'Invalid login credentials': 'Adresse e-mail ou mot de passe incorrect.',
+    'User already registered': 'Un compte existe déjà avec cet email.',
+    'Email not confirmed': "Cet email n'a pas encore été confirmé. Vérifie ta boîte mail.",
+    'Password should be at least 6 characters': 'Le mot de passe doit contenir au moins 6 caractères.',
+  };
+  return map[message] || message;
+}
+
+function AuthPage() {
+  const { signIn, signUp, resetPassword } = useAuth();
+  const [mode, setMode] = useState('signin'); // 'signin' | 'signup' | 'forgot'
+  const [role, setRole] = useState('buyer');
+  const [form, setForm] = useState({ email: '', password: '', fullName: '' });
+  const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [signupDone, setSignupDone] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setInfo('');
+    setLoading(true);
+
+    if (mode === 'forgot') {
+      const { error } = await resetPassword(form.email);
+      if (error) setError(translateError(error.message));
+      else setInfo("Si un compte existe avec cet email, un lien de réinitialisation vient d'être envoyé.");
+      setLoading(false);
+      return;
+    }
+
+    if (mode === 'signin') {
+      const { error } = await signIn({ email: form.email, password: form.password });
+      if (error) setError(translateError(error.message));
+    } else {
+      const { data, error } = await signUp({
+        email: form.email,
+        password: form.password,
+        fullName: form.fullName,
+        role,
+      });
+      if (error) {
+        setError(translateError(error.message));
+      } else if (!data?.session) {
+        setSignupDone(true);
+      }
+    }
+
+    setLoading(false);
+  };
+
+  if (signupDone) {
+    return (
+      <div className="grs-auth">
+        <div className="grs-auth-card">
+          <div className="grs-auth-brand">Gourouss</div>
+          <p style={{ marginTop: 20 }}>
+            Compte créé ! Va vérifier ta boîte email ({form.email}) et clique sur le lien de
+            confirmation, puis reviens ici pour te connecter.
+          </p>
+          <button className="grs-btn" style={{ marginTop: 20 }} onClick={() => { setSignupDone(false); setMode('signin'); }}>
+            J'ai confirmé — me connecter
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grs-auth">
+      <div className="grs-auth-card">
+        <div className="grs-auth-brand">Gourouss</div>
+        <div className="grs-auth-tag">Vos transactions, sous garde jusqu'à confirmation.</div>
+
+        {error && <div className="grs-error">{error}</div>}
+        {info && <p style={{ fontSize: '0.85rem', color: 'var(--forest)', marginBottom: 16 }}>{info}</p>}
+
+        <form onSubmit={handleSubmit}>
+          {mode === 'signup' && (
+            <>
+              <div className="grs-field">
+                <label htmlFor="fullName">Nom complet</label>
+                <input id="fullName" value={form.fullName} onChange={update('fullName')} required />
+              </div>
+              <div className="grs-role-toggle">
+                <button type="button" className={role === 'buyer' ? 'active' : ''} onClick={() => setRole('buyer')}>Acheteur</button>
+                <button type="button" className={role === 'seller' ? 'active' : ''} onClick={() => setRole('seller')}>Vendeur</button>
+              </div>
+            </>
+          )}
+
+          <div className="grs-field">
+            <label htmlFor="email">Email</label>
+            <input id="email" type="email" value={form.email} onChange={update('email')} required />
+          </div>
+
+          {mode !== 'forgot' && (
+            <div className="grs-field">
+              <label htmlFor="password">Mot de passe</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={update('password')}
+                  required
+                  minLength={6}
+                  style={{ paddingRight: 44 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.78rem', color: 'var(--sage)', fontFamily: 'var(--font-body)' }}
+                >
+                  {showPassword ? 'Masquer' : 'Afficher'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {mode === 'signin' && (
+            <div style={{ textAlign: 'right', marginBottom: 18 }}>
+              <button type="button" onClick={() => { setMode('forgot'); setError(''); setInfo(''); }} style={{ background: 'none', border: 'none', color: 'var(--sage)', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                Mot de passe oublié ?
+              </button>
+            </div>
+          )}
+
+          <button type="submit" className="grs-btn" disabled={loading}>
+            {loading ? 'Un instant...' : mode === 'signin' ? 'Se connecter' : mode === 'forgot' ? 'Envoyer le lien' : 'Créer mon compte'}
+          </button>
+        </form>
+
+        <div className="grs-switch">
+          {mode === 'signin' && (<>Pas encore de compte ? <button onClick={() => setMode('signup')}>S'inscrire</button></>)}
+          {mode === 'signup' && (<>Déjà un compte ? <button onClick={() => setMode('signin')}>Se connecter</button></>)}
+          {mode === 'forgot' && (<button onClick={() => setMode('signin')}>← Retour à la connexion</button>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ==== src/pages/DashboardPage.jsx ====
+
+function DashboardPage({ onSelectEscrow }) {
+  const { user, profile } = useAuth();
+  const { escrows, loading, createEscrow } = useEscrows(user?.id);
+  const [showNew, setShowNew] = useState(false);
+  const [query, setQuery] = useState('');
+  const [lastActivity, setLastActivity] = useState(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.rpc('get_last_activity', { p_user_id: user.id }).then(({ data }) => {
+      if (data) setLastActivity(data);
+    });
+  }, [user?.id, escrows.length]);
+
+  const summary = useMemo(() => {
+    if (!user?.id) return { activeCount: 0, completedCount: 0, disputedCount: 0, totalHeld: 0, received: 0, sent: 0 };
+    const active = escrows.filter((e) => ['pending', 'funded', 'delivered'].includes(e.status));
+    const completed = escrows.filter((e) => e.status === 'completed');
+    const disputed = escrows.filter((e) => e.status === 'disputed');
+    const totalHeld = active.filter((e) => e.status === 'funded').reduce((sum, e) => sum + Number(e.amount), 0);
+    const received = completed.filter((e) => e.seller_id === user.id).reduce((sum, e) => sum + Number(e.amount), 0);
+    const sent = completed.filter((e) => e.buyer_id === user?.id).reduce((sum, e) => sum + Number(e.amount), 0);
+    return {
+      activeCount: active.length,
+      completedCount: completed.length,
+      disputedCount: disputed.length,
+      totalHeld,
+      received,
+      sent,
+    };
+  }, [escrows, user?.id]);
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return escrows;
+    const q = query.trim().toLowerCase();
+    return escrows.filter(
+      (e) => e.title?.toLowerCase().includes(q) || e.reference?.toLowerCase().includes(q)
+    );
+  }, [escrows, query]);
+
+  if (!user) {
+    return <p style={{ color: 'var(--sage)' }}>Chargement...</p>;
+  }
+
+  return (
+    <div>
+      <div className="grs-header">
+        <div>
+          <span className="eyebrow">{profile?.role === 'seller' ? '🤝 Espace vendeur' : '🤝 Espace acheteur'}</span>
+          <h1>Bonjour, {profile?.full_name?.split(' ')[0] || '...'}</h1>
+          {lastActivity && (
+            <p style={{ fontSize: '0.78rem', color: 'var(--sage)', marginTop: 4 }}>
+              Dernière activité : {new Date(lastActivity).toLocaleString('fr-FR')}
+            </p>
+          )}
+        </div>
+        <button className="grs-btn" style={{ width: 'auto', padding: '12px 22px' }} onClick={() => setShowNew(true)}>
+          + Nouvelle transaction
+        </button>
+      </div>
+
+      <div className="grs-summary" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 12 }}>
+        <div className="grs-summary-cell">
+          <div className="val grs-mono">🔒 {summary.activeCount}</div>
+          <div className="lbl">Transactions en cours</div>
+        </div>
+        <div className="grs-summary-cell">
+          <div className="val grs-mono">💰 {summary.totalHeld.toLocaleString('fr-FR')} F</div>
+          <div className="lbl">Fonds sous garde</div>
+        </div>
+        <div className="grs-summary-cell">
+          <div className="val grs-mono">✅ {summary.completedCount}</div>
+          <div className="lbl">Transactions terminées</div>
+        </div>
+      </div>
+      <div className="grs-summary" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div className="grs-summary-cell">
+          <div className="val grs-mono">📥 {summary.received.toLocaleString('fr-FR')} F</div>
+          <div className="lbl">Argent reçu</div>
+        </div>
+        <div className="grs-summary-cell">
+          <div className="val grs-mono">📤 {summary.sent.toLocaleString('fr-FR')} F</div>
+          <div className="lbl">Argent envoyé</div>
+        </div>
+        <div className="grs-summary-cell">
+          <div className="val grs-mono" style={{ color: summary.disputedCount > 0 ? 'var(--rust)' : undefined }}>
+            ⚠️ {summary.disputedCount}
+          </div>
+          <div className="lbl">Litiges ouverts</div>
+        </div>
+      </div>
+
+      {showNew && (
+        <div style={{ marginTop: 24, marginBottom: 4 }}>
+          <NewEscrowModal onCreate={(vals) => createEscrow(vals)} onClose={() => setShowNew(false)} />
+        </div>
+      )}
+
+      {escrows.length > 0 && (
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="🔍 Rechercher par titre ou référence..."
+          style={{
+            width: '100%', padding: '11px 14px', margin: '28px 0 16px', border: '1.5px solid var(--sage-line)',
+            borderRadius: 3, background: 'var(--white)', fontFamily: 'var(--font-body)', fontSize: '0.9rem',
+          }}
+        />
+      )}
+
+      {loading ? (
+        <p style={{ color: 'var(--sage)' }}>Chargement...</p>
+      ) : escrows.length === 0 ? (
+        <div className="grs-empty">
+          <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>📭</div>
+          <h3>Aucune transaction pour l'instant</h3>
+          <p>Clique sur "+ Nouvelle transaction" pour créer ta première transaction sécurisée avec Gourouss.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <p style={{ color: 'var(--sage)', textAlign: 'center', padding: 30 }}>Aucun résultat pour "{query}".</p>
+      ) : (
+        <div className="grs-list">
+          {filtered.map((e) => {
+            const counterpart = e.buyer_id === user?.id ? e.seller : e.buyer;
+            const role = e.buyer_id === user?.id ? 'Vendeur' : 'Acheteur';
+            return (
+              <div key={e.id} className="grs-row" onClick={() => onSelectEscrow(e.id)}>
+                <StatusSeal status={e.status} />
+                <div className="info">
+                  <div className="title">{e.title}</div>
+                  <div className="sub">
+                    {role} : {counterpart?.full_name || '—'} · <span className="grs-mono">{e.reference}</span>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div className="amount">{Number(e.amount).toLocaleString('fr-FR')} {e.currency}</div>
+                  <StatusLabel status={e.status} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+// ==== src/pages/EscrowDetailPage.jsx ====
+
+function EscrowDetailPage({ escrowId, onBack }) {
+  const { user } = useAuth();
+  const { escrows, updateStatus } = useEscrows(user?.id);
+  const [busy, setBusy] = useState(false);
+
+  const escrow = escrows.find((e) => e.id === escrowId);
+
+  if (!user || !escrow) {
+    return (
+      <div>
+        <button className="grs-back" onClick={onBack}>← Retour</button>
+        <p style={{ color: 'var(--sage)' }}>Chargement de la transaction...</p>
+      </div>
+    );
+  }
+
+  const isBuyer = escrow.buyer_id === user.id;
+  const isSeller = escrow.seller_id === user.id;
+
+  const handleTransition = async (newStatus) => {
+    setBusy(true);
+    await updateStatus(escrow.id, escrow.status, newStatus);
+    setBusy(false);
+  };
+
+  return (
+    <div>
+      <button className="grs-back" onClick={onBack}>← Retour aux transactions</button>
+
+      <div className="grs-detail-card">
+        <div className="grs-detail-top">
+          <div>
+            <span className="eyebrow grs-mono">{escrow.reference}</span>
+            <h2 style={{ fontSize: '1.4rem' }}>{escrow.title}</h2>
+          </div>
+          <StatusLabel status={escrow.status} />
+        </div>
+        {escrow.description && <p style={{ color: 'var(--sage)', fontSize: '0.92rem' }}>{escrow.description}</p>}
+
+        <CustodyBar status={escrow.status} />
+
+        <div>
+          <div className="grs-kv"><span className="k">💰 Montant</span><span className="v">{Number(escrow.amount).toLocaleString('fr-FR')} {escrow.currency}</span></div>
+          {escrow.category && <div className="grs-kv"><span className="k">Catégorie</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.category}</span></div>}
+          {escrow.delivery_method && <div className="grs-kv"><span className="k">📦 Livraison</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.delivery_method}</span></div>}
+          {escrow.deadline && <div className="grs-kv"><span className="k">Date limite</span><span className="v">{new Date(escrow.deadline).toLocaleDateString('fr-FR')}</span></div>}
+          <div className="grs-kv"><span className="k">🤝 Acheteur</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.buyer?.full_name}</span></div>
+          <div className="grs-kv"><span className="k">🤝 Vendeur</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.seller?.full_name}</span></div>
+          <div className="grs-kv"><span className="k">Créée le</span><span className="v">{new Date(escrow.created_at).toLocaleDateString('fr-FR')}</span></div>
+        </div>
+      </div>
+
+      {escrow.status === 'pending' && isBuyer && (
+        <div className="grs-detail-card">
+          <h3 style={{ fontSize: '1rem', marginBottom: 14 }}>🔒 Preuve de paiement</h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--sage)', marginBottom: 14 }}>
+            Indiquez le réseau utilisé, envoyez le montant au vendeur via ce réseau, puis uploadez votre capture d'écran.
+          </p>
+          <ProofUploadForm escrow={escrow} userId={user.id} />
+        </div>
+      )}
+
+      {escrow.status === 'pending' && isSeller && escrow.payment_proof_url && (
+        <div className="grs-detail-card">
+          <h3 style={{ fontSize: '1rem', marginBottom: 14 }}>Vérifier la preuve de paiement</h3>
+          <ProofReviewPanel escrow={escrow} userId={user.id} />
+        </div>
+      )}
+
+      <div className="grs-actions" style={{ marginBottom: 24 }}>
+        {escrow.status === 'funded' && isSeller && (
+          <button className="grs-btn" disabled={busy} onClick={() => handleTransition('delivered')}>
+            📦 Marquer comme livré
+          </button>
+        )}
+        {escrow.status === 'delivered' && isBuyer && (
+          <button className="grs-btn" disabled={busy} onClick={() => handleTransition('completed')}>
+            ✅ Confirmer la réception — libérer les fonds
+          </button>
+        )}
+        {['funded', 'delivered'].includes(escrow.status) && (
+          <button className="grs-btn-outline" disabled={busy} onClick={() => handleTransition('disputed')}>
+            ⚠️ Ouvrir un litige
+          </button>
+        )}
+        {escrow.status === 'pending' && isBuyer && (
+          <button className="grs-btn-outline" disabled={busy} onClick={() => handleTransition('cancelled')}>
+            Annuler la transaction
+          </button>
+        )}
+      </div>
+
+      <ChatPanel escrowId={escrow.id} userId={user.id} />
+    </div>
+  );
+}
+
+
+// ==== src/App.jsx ====
+
+function App() {
+  const { user, profile, loading, signOut } = useAuth();
+  const [view, setView] = useState({ page: 'dashboard', escrowId: null });
+  const [dark, setDark] = useState(() => localStorage.getItem('grs-theme') === 'dark');
+
+  useEffect(() => {
+    document.body.classList.toggle('grs-dark', dark);
+    localStorage.setItem('grs-theme', dark ? 'dark' : 'light');
+  }, [dark]);
+
+  if (loading) {
+    return <div className="grs-auth"><p style={{ color: 'var(--sage)' }}>Chargement...</p></div>;
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  return (
+    <div className="grs-app">
+      <div className="grs-shell">
+        <aside className="grs-sidebar">
+          <div className="grs-brand">
+            <span className="seal-mini">G</span>
+            Gourouss
+          </div>
+          <nav className="grs-nav">
+            <a
+              href="#"
+              className={view.page === 'dashboard' ? 'active' : ''}
+              onClick={(e) => { e.preventDefault(); setView({ page: 'dashboard', escrowId: null }); }}
+            >
+              Transactions
+            </a>
+            <a href="#" onClick={(e) => { e.preventDefault(); signOut(); }}>
+              Déconnexion ({profile?.full_name || user.email})
+            </a>
+          </nav>
+          <button className="grs-theme-toggle" onClick={() => setDark((d) => !d)}>
+            {dark ? '☀️ Mode clair' : '🌙 Mode sombre'}
+          </button>
+        </aside>
+
+        <main className="grs-main">
+          {view.page === 'dashboard' && (
+            <DashboardPage onSelectEscrow={(id) => setView({ page: 'detail', escrowId: id })} />
+          )}
+          {view.page === 'detail' && (
+            <EscrowDetailPage
+              escrowId={view.escrowId}
+              onBack={() => setView({ page: 'dashboard', escrowId: null })}
+            />
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <ErrorBoundary>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </ErrorBoundary>
+);
+</script>
+</body>
+</html>
