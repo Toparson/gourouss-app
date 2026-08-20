@@ -523,7 +523,7 @@ body.grs-dark .grs-field textarea {
 <script type="text/babel" data-presets="react">
 const { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext, Component } = React;
 
-const supabase = window.supabase.createClient(
+const db = window.supabase.createClient(
   'https://cmolqdiguxpqrrhbgfxe.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNtb2xxZGlndXhwcXJyaGJnZnhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0Mzg1OTAsImV4cCI6MjEwMTAxNDU5MH0.aXR_D57vZnEcI25fZ3Vha81H_t8P57tIPP5-dsYEEpg'
 );
@@ -547,7 +547,7 @@ function AuthProvider({ children }) {
       setProfile(null);
       return;
     }
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
+    const { data, error } = await db.from('profiles').select('*').eq('id', userId).single();
     if (error) {
       console.error('Erreur chargement profil:', error.message);
       return;
@@ -556,13 +556,13 @@ function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    db.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) loadProfile(session.user.id);
       setLoading(false);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = db.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         loadProfile(session.user.id);
@@ -575,7 +575,7 @@ function AuthProvider({ children }) {
   }, [loadProfile]);
 
   const signUp = async ({ email, password, fullName, role }) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await db.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName, role } },
@@ -584,16 +584,16 @@ function AuthProvider({ children }) {
   };
 
   const signIn = async ({ email, password }) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await db.auth.signInWithPassword({ email, password });
     return { data, error };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await db.auth.signOut();
   };
 
   const resetPassword = async (email) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await db.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin,
     });
     return { error };
@@ -631,7 +631,7 @@ function useEscrows(userId) {
   const fetchEscrows = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('escrows')
       .select(`
         *,
@@ -654,7 +654,7 @@ function useEscrows(userId) {
     fetchEscrows();
 
     // Mises à jour en temps réel : la liste se rafraîchit automatiquement
-    const channel = supabase
+    const channel = db
       .channel('escrows-changes')
       .on(
         'postgres_changes',
@@ -663,14 +663,14 @@ function useEscrows(userId) {
       )
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    return () => db.removeChannel(channel);
   }, [fetchEscrows]);
 
   const createEscrow = async ({
     sellerId, title, description, amount, currency = 'XAF',
     category = null, deliveryMethod = null, deliveryTerms = null, deadline = null,
   }) => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('escrows')
       .insert({
         buyer_id: userId, seller_id: sellerId, title, description, amount, currency,
@@ -695,7 +695,7 @@ function useEscrows(userId) {
     const updates = { status: newStatus };
     if (timestampField) updates[timestampField] = new Date().toISOString();
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('escrows')
       .update(updates)
       .eq('id', escrowId)
@@ -704,7 +704,7 @@ function useEscrows(userId) {
 
     if (!error) {
       // Journalise le changement dans escrow_events
-      await supabase.from('escrow_events').insert({
+      await db.from('escrow_events').insert({
         escrow_id: escrowId,
         actor_id: userId,
         from_status: currentStatus,
@@ -720,14 +720,14 @@ function useEscrows(userId) {
   const submitPaymentProof = async (escrowId, file, amountSent, paymentNetwork) => {
     const filePath = `${escrowId}/${Date.now()}_${file.name}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await db.storage
       .from('payment-proofs')
       .upload(filePath, file);
 
     if (uploadError) return { error: uploadError };
 
     // Le bucket est privé : on stocke le chemin, pas une URL publique
-    const { data, error } = await supabase.rpc('submit_payment_proof', {
+    const { data, error } = await db.rpc('submit_payment_proof', {
       p_escrow_id: escrowId,
       p_proof_url: filePath,
       p_amount_sent: amountSent,
@@ -739,7 +739,7 @@ function useEscrows(userId) {
 
   // Génère une URL temporaire pour afficher/vérifier une preuve (valable 60 min)
   const getProofUrl = async (filePath) => {
-    const { data, error } = await supabase.storage
+    const { data, error } = await db.storage
       .from('payment-proofs')
       .createSignedUrl(filePath, 3600);
     return { url: data?.signedUrl, error };
@@ -748,7 +748,7 @@ function useEscrows(userId) {
   // Le vendeur (ou un admin) valide ou refuse la preuve reçue
   // acceptMismatch : à passer à true si le vendeur valide malgré un écart de montant détecté
   const verifyPaymentProof = async (escrowId, approved, rejectionReason = null, acceptMismatch = false) => {
-    const { data, error } = await supabase.rpc('verify_payment_proof', {
+    const { data, error } = await db.rpc('verify_payment_proof', {
       p_escrow_id: escrowId,
       p_approved: approved,
       p_rejection_reason: rejectionReason,
@@ -779,7 +779,7 @@ function useMessages(escrowId, userId) {
 
   const fetchMessages = useCallback(async () => {
     if (!escrowId) return;
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('messages')
       .select('*, sender:sender_id(full_name)')
       .eq('escrow_id', escrowId)
@@ -790,16 +790,16 @@ function useMessages(escrowId, userId) {
 
   useEffect(() => {
     fetchMessages();
-    const channel = supabase
+    const channel = db
       .channel(`messages-${escrowId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `escrow_id=eq.${escrowId}` }, fetchMessages)
       .subscribe();
-    return () => supabase.removeChannel(channel);
+    return () => db.removeChannel(channel);
   }, [fetchMessages, escrowId]);
 
   const sendMessage = async (content) => {
     if (!content.trim()) return { error: null };
-    const { error } = await supabase.from('messages').insert({
+    const { error } = await db.from('messages').insert({
       escrow_id: escrowId,
       sender_id: userId,
       content: content.trim(),
@@ -1109,7 +1109,7 @@ function NewEscrowModal({ onCreate, onClose }) {
     if (!form.sellerEmail.trim()) return;
     setSearching(true);
     setError('');
-    const { data, error } = await supabase.rpc('find_user_by_email', { p_email: form.sellerEmail.trim() });
+    const { data, error } = await db.rpc('find_user_by_email', { p_email: form.sellerEmail.trim() });
     setSearching(false);
     const found = data?.[0];
     if (error || !found) {
@@ -1488,7 +1488,7 @@ function DashboardPage({ onSelectEscrow }) {
 
   useEffect(() => {
     if (!user?.id) return;
-    supabase.rpc('get_last_activity', { p_user_id: user.id }).then(({ data }) => {
+    db.rpc('get_last_activity', { p_user_id: user.id }).then(({ data }) => {
       if (data) setLastActivity(data);
     });
   }, [user?.id, escrows.length]);
