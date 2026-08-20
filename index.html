@@ -6,7 +6,7 @@
 <title>Gourouss</title>
 <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 /* ============================================================
@@ -520,7 +520,7 @@ body.grs-dark .grs-field textarea {
 <body>
 <div id="root"></div>
 
-<script type="text/babel" data-presets="react">
+<script type="text/babel" data-presets='[["react", {"runtime": "classic"}]]'>
 const { useState, useEffect, useCallback, useMemo, useRef, createContext, useContext, Component } = React;
 
 const supabase = window.supabase.createClient(
