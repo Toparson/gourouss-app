@@ -669,12 +669,14 @@ function useEscrows(userId) {
   const createEscrow = async ({
     sellerId, title, description, amount, currency = 'XAF',
     category = null, deliveryMethod = null, deliveryTerms = null, deadline = null,
+    preferredNetwork = null,
   }) => {
     const { data, error } = await db
       .from('escrows')
       .insert({
         buyer_id: userId, seller_id: sellerId, title, description, amount, currency,
         category, delivery_method: deliveryMethod, delivery_terms: deliveryTerms, deadline,
+        preferred_payment_network: preferredNetwork,
       })
       .select()
       .single();
@@ -885,7 +887,7 @@ const PAYMENT_NETWORKS = [
  */
 function ProofUploadForm({ escrow, userId }) {
   const { submitPaymentProof } = useEscrows(userId);
-  const [network, setNetwork] = useState(null);
+  const [network, setNetwork] = useState(escrow.preferred_payment_network || null);
   const [file, setFile] = useState(null);
   const [amountSent, setAmountSent] = useState(escrow.amount);
   const [status, setStatus] = useState('idle'); // idle | uploading | done | error
@@ -942,6 +944,11 @@ function ProofUploadForm({ escrow, userId }) {
         {!network && (
           <p style={{ fontSize: '0.78rem', color: 'var(--sage)', marginTop: 6 }}>
             Choisissez le réseau utilisé pour envoyer l'argent au vendeur avant de continuer.
+          </p>
+        )}
+        {escrow.preferred_payment_network && network === escrow.preferred_payment_network && (
+          <p style={{ fontSize: '0.78rem', color: 'var(--sage)', marginTop: 6 }}>
+            Pré-rempli depuis le réseau indiqué à la création — modifiable si besoin.
           </p>
         )}
         {network && (
@@ -1090,12 +1097,13 @@ function ProofReviewPanel({ escrow, userId }) {
 const CATEGORIES = ['Électronique', 'Vêtements & mode', 'Véhicules', 'Immobilier', 'Services', 'Autre'];
 const DELIVERY_METHODS = ['Remise en main propre', 'Livraison à domicile', 'Point de retrait'];
 
-function NewEscrowModal({ onCreate, onClose }) {
+function NewEscrowModal({ onCreate, onClose, onCreated }) {
   const [form, setForm] = useState({
     sellerEmail: '', title: '', description: '', amount: '',
     category: CATEGORIES[0], deliveryMethod: DELIVERY_METHODS[0], deliveryTerms: '', deadline: '',
   });
   const [seller, setSeller] = useState(null);
+  const [network, setNetwork] = useState(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -1132,7 +1140,7 @@ function NewEscrowModal({ onCreate, onClose }) {
     setLoading(true);
     setError('');
 
-    const { error } = await onCreate({
+    const { data, error } = await onCreate({
       sellerId: seller.id,
       title: form.title,
       description: form.description,
@@ -1141,9 +1149,11 @@ function NewEscrowModal({ onCreate, onClose }) {
       deliveryMethod: form.deliveryMethod,
       deliveryTerms: form.deliveryTerms,
       deadline: form.deadline || null,
+      preferredNetwork: network,
     });
 
     if (error) setError(error.message);
+    else if (data?.id && onCreated) onCreated(data.id);
     else onClose();
     setLoading(false);
   };
@@ -1203,6 +1213,27 @@ function NewEscrowModal({ onCreate, onClose }) {
           <label>Montant (FCFA)</label>
           <input type="number" min="1" value={form.amount} onChange={update('amount')} required />
         </div>
+
+        <div className="grs-field">
+          <label>Réseau mobile money prévu (optionnel)</label>
+          <div className="grs-network-toggle">
+            {PAYMENT_NETWORKS.map((n) => (
+              <button
+                type="button"
+                key={n.key}
+                className={`grs-network-btn ${n.key} ${network === n.key ? 'active' : ''}`}
+                onClick={() => setNetwork(network === n.key ? null : n.key)}
+              >
+                <span className="grs-network-dot" />
+                {n.label}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontSize: '0.78rem', color: 'var(--sage)', marginTop: 6 }}>
+            Indicatif pour le vendeur — tu confirmeras le réseau utilisé au moment d'envoyer le paiement.
+          </p>
+        </div>
+
         <div className="grs-actions">
           <button type="submit" className="grs-btn" disabled={loading || !seller} style={{ flex: 1 }}>
             {loading ? 'Création...' : 'Créer la transaction'}
@@ -1573,7 +1604,11 @@ function DashboardPage({ onSelectEscrow }) {
 
       {showNew && (
         <div style={{ marginTop: 24, marginBottom: 4 }}>
-          <NewEscrowModal onCreate={(vals) => createEscrow(vals)} onClose={() => setShowNew(false)} />
+          <NewEscrowModal
+            onCreate={(vals) => createEscrow(vals)}
+            onClose={() => setShowNew(false)}
+            onCreated={(id) => { setShowNew(false); onSelectEscrow(id); }}
+          />
         </div>
       )}
 
@@ -1675,6 +1710,7 @@ function EscrowDetailPage({ escrowId, onBack }) {
           {escrow.category && <div className="grs-kv"><span className="k">Catégorie</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.category}</span></div>}
           {escrow.delivery_method && <div className="grs-kv"><span className="k">📦 Livraison</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.delivery_method}</span></div>}
           {escrow.deadline && <div className="grs-kv"><span className="k">Date limite</span><span className="v">{new Date(escrow.deadline).toLocaleDateString('fr-FR')}</span></div>}
+          {escrow.preferred_payment_network && <div className="grs-kv"><span className="k">💳 Réseau prévu</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{PAYMENT_NETWORKS.find((n) => n.key === escrow.preferred_payment_network)?.label}</span></div>}
           <div className="grs-kv"><span className="k">🤝 Acheteur</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.buyer?.full_name}</span></div>
           <div className="grs-kv"><span className="k">🤝 Vendeur</span><span className="v" style={{ fontFamily: 'var(--font-body)' }}>{escrow.seller?.full_name}</span></div>
           <div className="grs-kv"><span className="k">Créée le</span><span className="v">{new Date(escrow.created_at).toLocaleDateString('fr-FR')}</span></div>
