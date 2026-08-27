@@ -885,6 +885,9 @@ const PAYMENT_NETWORKS = [
  * puis uploader la capture d'écran après avoir envoyé l'argent manuellement
  * au vendeur via Airtel Money ou Moov Money.
  */
+const PROOF_MAX_SIZE = 8 * 1024 * 1024; // 8 Mo — doit rester aligné avec le bucket 'payment-proofs'
+const PROOF_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic'];
+
 function ProofUploadForm({ escrow, userId }) {
   const { submitPaymentProof } = useEscrows(userId);
   const [network, setNetwork] = useState(escrow.preferred_payment_network || null);
@@ -989,8 +992,25 @@ function ProofUploadForm({ escrow, userId }) {
         <label>Capture d'écran du paiement {network ? `(${PAYMENT_NETWORKS.find((n) => n.key === network)?.label})` : ''}</label>
         <input
           type="file"
-          accept="image/*"
-          onChange={(e) => setFile(e.target.files[0])}
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          onChange={(e) => {
+            const f = e.target.files[0];
+            setErrorMsg('');
+            if (!f) { setFile(null); return; }
+            if (!PROOF_ALLOWED_TYPES.includes(f.type)) {
+              setErrorMsg('Format non accepté. Envoie une image (JPEG, PNG, WebP ou HEIC).');
+              setFile(null);
+              e.target.value = '';
+              return;
+            }
+            if (f.size > PROOF_MAX_SIZE) {
+              setErrorMsg('Fichier trop lourd (8 Mo max). Compresse la capture ou reprends-la.');
+              setFile(null);
+              e.target.value = '';
+              return;
+            }
+            setFile(f);
+          }}
           disabled={!network}
           required
         />
